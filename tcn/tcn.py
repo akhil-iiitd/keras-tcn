@@ -1,5 +1,5 @@
 import inspect
-from typing import List  # noqa
+from typing import List
 
 import tensorflow as tf
 # pylint: disable=E0611,E0401
@@ -185,7 +185,7 @@ class TCN(Layer):
     """Creates a TCN layer.
 
         Input shape:
-            A 3D tensor with shape (batch_size, timesteps, input_dim).
+            A tensor of shape (batch_size, timesteps, input_dim).
 
         Args:
             nb_filters: The number of filters to use in the convolutional layers. Can be a list.
@@ -201,11 +201,9 @@ class TCN(Layer):
             use_batch_norm: Whether to use batch normalization in the residual layers or not.
             use_layer_norm: Whether to use layer normalization in the residual layers or not.
             use_weight_norm: Whether to use weight normalization in the residual layers or not.
-            go_backwards: Boolean (default False). If True, process the input sequence backwards and
-            return the reversed sequence.
-            return_state: Boolean. Whether to return the last state in addition to the output. Default: False.
             kwargs: Any other arguments for configuring parent class Layer. For example "name=str", Name of the model.
                     Use unique names when using multiple TCN.
+
         Returns:
             A TCN layer.
         """
@@ -270,12 +268,6 @@ class TCN(Layer):
     def receptive_field(self):
         return 1 + 2 * (self.kernel_size - 1) * self.nb_stacks * sum(self.dilations)
 
-    def tolist(self, shape):
-        try:
-            return shape.as_list()
-        except AttributeError:
-            return shape
-
     def build(self, input_shape):
 
         # member to hold current output shape of the layer for building purposes
@@ -311,9 +303,9 @@ class TCN(Layer):
 
         self.output_slice_index = None
         if self.padding == 'same':
-            time = self.tolist(self.build_output_shape)[1]
+            time = list(self.build_output_shape)[1]
             if time is not None:  # if time dimension is defined. e.g. shape = (bs, 500, input_dim).
-                self.output_slice_index = int(self.tolist(self.build_output_shape)[1] / 2)
+                self.output_slice_index = int(list(self.build_output_shape)[1] / 2)
             else:
                 # It will known at call time. c.f. self.call.
                 self.padding_same_and_time_dim_unknown = True
@@ -321,7 +313,7 @@ class TCN(Layer):
         else:
             self.output_slice_index = -1  # causal case.
         self.slicer_layer = Lambda(lambda tt: tt[:, self.output_slice_index, :], name='Slice_Output')
-        self.slicer_layer.build(self.tolist(self.build_output_shape))
+        self.slicer_layer.build(list(self.build_output_shape))
 
     def compute_output_shape(self, input_shape):
         """
